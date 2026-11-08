@@ -17,7 +17,7 @@ export type QuizInput = {
   questions: QuestionInput[];
 };
 
-export type Question = QuestionInput & {
+export type Question = Omit<QuestionInput, 'options'> & {
   id: number;
   position: number;
   options?: (OptionInput & {

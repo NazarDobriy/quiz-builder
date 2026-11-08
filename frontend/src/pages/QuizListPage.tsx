@@ -1,57 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardList, Plus, Trash2, ArrowRight } from 'lucide-react';
-import { errorMessage, quizService } from '../services/quizService';
-import type { QuizSummary } from '../types/quiz';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  deleteQuiz,
+  fetchQuizzes,
+  selectDeletingIds,
+  selectListError,
+  selectListStatus,
+  selectQuizzes,
+} from '../store/quizSlice';
 
 export default function QuizListPage() {
-  const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const dispatch = useAppDispatch();
+  const quizzes = useAppSelector(selectQuizzes);
+  const listStatus = useAppSelector(selectListStatus);
+  const error = useAppSelector(selectListError);
+  const deletingIds = useAppSelector(selectDeletingIds);
 
   useEffect(() => {
-    let active = true;
+    void dispatch(fetchQuizzes());
+  }, [dispatch]);
 
-    quizService
-      .list()
-      .then((data) => {
-        if (active) {
-          setQuizzes(data);
-        }
-      })
-      .catch((e: unknown) => {
-        if (active) {
-          setError(errorMessage(e));
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const remove = async (id: number) => {
+  const remove = (id: number) => {
     if (!window.confirm('Delete this quiz permanently?')) {
       return;
     }
 
-    setDeletingId(id);
-    setError('');
-
-    try {
-      await quizService.remove(id);
-      setQuizzes((prev) => prev.filter((q) => q.id !== id));
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setDeletingId(null);
-    }
+    void dispatch(deleteQuiz(id));
   };
 
   return (
@@ -75,7 +51,7 @@ export default function QuizListPage() {
         </p>
       )}
 
-      {loading ? (
+      {listStatus === 'idle' || listStatus === 'loading' ? (
         <p>Loading quizzes...</p>
       ) : quizzes.length === 0 ? (
         <div className="card empty">
@@ -102,8 +78,8 @@ export default function QuizListPage() {
                   className="icon-button danger"
                   title={`Delete ${quiz.title}`}
                   aria-label={`Delete ${quiz.title}`}
-                  disabled={deletingId === quiz.id}
-                  onClick={() => void remove(quiz.id)}
+                  disabled={deletingIds.includes(quiz.id)}
+                  onClick={() => remove(quiz.id)}
                 >
                   <Trash2 size={19} />
                 </button>

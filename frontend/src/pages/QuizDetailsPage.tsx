@@ -1,42 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Circle, ListChecks } from 'lucide-react';
-import { errorMessage, quizService } from '../services/quizService';
-import type { Quiz } from '../types/quiz';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  fetchQuizById,
+  selectCurrentQuiz,
+  selectDetailError,
+  selectDetailStatus,
+} from '../store/quizSlice';
 
 export default function QuizDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const quiz = useAppSelector(selectCurrentQuiz);
+  const error = useAppSelector(selectDetailError);
+  const status = useAppSelector(selectDetailStatus);
 
-  useEffect(() => { 
-    let active = true;
-    if (!id) {
-      return;
+  useEffect(() => {
+    if (id) {
+      void dispatch(fetchQuizById(id));
     }
-    setLoading(true);
-    quizService.get(id).then((data) => { 
-      if (active) {
-        setQuiz(data);
-      }
-     }).catch((e: unknown) => {
-      if (active) {
-        setError(errorMessage(e));
-      };
-     }).finally(() => { 
-      if (active) {
-        setLoading(false);
-      }
-     }); return () => { active = false; };
-   }, [id]);
-   
-  if (loading) {
-    return <div className="page"><p>Loading quiz...</p></div>
+  }, [dispatch, id]);
+
+  if (status === 'idle' || status === 'loading') {
+    return (
+      <div className="page">
+        <p>Loading quiz...</p>
+      </div>
+    );
   }
 
   if (error || !quiz) {
-    return <div className="page"><p className="alert">{error || 'Quiz not found'}</p><Link to="/quizzes">Back to quizzes</Link></div>;
+    return (
+      <div className="page">
+        <p className="alert">{error || 'Quiz not found'}</p>
+        <Link to="/quizzes">Back to quizzes</Link>
+      </div>
+    );
   }
 
   return (
@@ -51,7 +51,8 @@ export default function QuizDetailsPage() {
         <h1>{quiz.title}</h1>
         <p>
           {quiz.questions.length}{' '}
-          {quiz.questions.length === 1 ? 'question' : 'questions'} · Read-only preview
+          {quiz.questions.length === 1 ? 'question' : 'questions'} · Read-only
+          preview
         </p>
       </div>
 
@@ -98,9 +99,7 @@ export default function QuizDetailsPage() {
             <div className="read-options">
               {question.options?.map((option) => (
                 <div
-                  className={`read-option ${
-                    option.isCorrect ? 'correct' : ''
-                  }`}
+                  className={`read-option ${option.isCorrect ? 'correct' : ''}`}
                   key={option.id}
                 >
                   {option.isCorrect ? (

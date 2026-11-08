@@ -3,7 +3,13 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Save } from 'lucide-react';
 import QuestionForm from '../components/QuestionForm';
-import { errorMessage, quizService } from '../services/quizService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  clearCreateError,
+  createQuiz,
+  selectCreateError,
+  selectCreateStatus,
+} from '../store/quizSlice';
 import type { QuestionInput, QuizInput } from '../types/quiz';
 
 const newQuestion = (): QuestionInput => ({
@@ -15,7 +21,9 @@ const newQuestion = (): QuestionInput => ({
 
 export default function CreateQuizPage() {
   const navigate = useNavigate();
-
+  const dispatch = useAppDispatch();
+  const createError = useAppSelector(selectCreateError);
+  const createStatus = useAppSelector(selectCreateStatus);
   const [serverError, setServerError] = useState('');
 
   const {
@@ -39,6 +47,7 @@ export default function CreateQuizPage() {
 
   const onSubmit = handleSubmit(async (data) => {
     setServerError('');
+    dispatch(clearCreateError());
 
     for (const [index, question] of data.questions.entries()) {
       if (
@@ -50,15 +59,15 @@ export default function CreateQuizPage() {
         });
 
         setServerError(
-          `Question ${index + 1}: select at least one correct checkbox answer.`
+          `Question ${index + 1}: select at least one correct checkbox answer.`,
         );
 
         return;
       }
     }
 
-    try {
-      const quiz = await quizService.create({
+    const result = await dispatch(
+      createQuiz({
         title: data.title.trim(),
         questions: data.questions.map((q) => ({
           text: q.text.trim(),
@@ -74,11 +83,11 @@ export default function CreateQuizPage() {
                 correctAnswer: q.correctAnswer?.trim(),
               }),
         })),
-      });
+      }),
+    );
 
-      navigate(`/quizzes/${quiz.id}`);
-    } catch (error) {
-      setServerError(errorMessage(error));
+    if (createQuiz.fulfilled.match(result)) {
+      navigate(`/quizzes/${result.payload.id}`);
     }
   });
 
@@ -106,9 +115,7 @@ export default function CreateQuizPage() {
             />
 
             {errors.title && (
-              <small className="error">
-                {errors.title.message}
-              </small>
+              <small className="error">{errors.title.message}</small>
             )}
           </div>
         </section>
@@ -141,9 +148,9 @@ export default function CreateQuizPage() {
           Add another question
         </button>
 
-        {serverError && (
+        {(serverError || createError) && (
           <p role="alert" className="alert">
-            {serverError}
+            {serverError || createError}
           </p>
         )}
 
@@ -151,10 +158,12 @@ export default function CreateQuizPage() {
           <button
             className="button primary"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || createStatus === 'loading'}
           >
             <Save size={18} />
-            {isSubmitting ? 'Saving...' : 'Create quiz'}
+            {isSubmitting || createStatus === 'loading'
+              ? 'Saving...'
+              : 'Create quiz'}
           </button>
         </div>
       </form>
