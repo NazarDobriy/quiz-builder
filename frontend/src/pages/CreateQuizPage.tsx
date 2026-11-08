@@ -9,7 +9,7 @@ import {
   createQuiz,
   selectCreateError,
   selectCreateStatus,
-} from '../store/quizSlice';
+} from '../store/quizzesSlice';
 import type { QuestionInput, QuizInput } from '../types/quiz';
 
 const newQuestion = (): QuestionInput => ({

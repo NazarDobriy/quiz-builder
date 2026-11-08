@@ -6,16 +6,16 @@ import {
   deleteQuiz,
   fetchQuizzes,
   selectDeletingIds,
-  selectListError,
-  selectListStatus,
+  selectQuizzesError,
+  selectQuizzesStatus,
   selectQuizzes,
-} from '../store/quizSlice';
+} from '../store/quizzesSlice';
 
 export default function QuizListPage() {
   const dispatch = useAppDispatch();
   const quizzes = useAppSelector(selectQuizzes);
-  const listStatus = useAppSelector(selectListStatus);
-  const error = useAppSelector(selectListError);
+  const listStatus = useAppSelector(selectQuizzesStatus);
+  const error = useAppSelector(selectQuizzesError);
   const deletingIds = useAppSelector(selectDeletingIds);
 
   useEffect(() => {

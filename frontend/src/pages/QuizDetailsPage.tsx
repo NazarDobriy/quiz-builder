@@ -5,16 +5,16 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   fetchQuizById,
   selectCurrentQuiz,
-  selectDetailError,
-  selectDetailStatus,
+  selectQuizError,
+  selectQuizStatus,
 } from '../store/quizSlice';
 
 export default function QuizDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const quiz = useAppSelector(selectCurrentQuiz);
-  const error = useAppSelector(selectDetailError);
-  const status = useAppSelector(selectDetailStatus);
+  const error = useAppSelector(selectQuizError);
+  const status = useAppSelector(selectQuizStatus);
 
   useEffect(() => {
     if (id) {
